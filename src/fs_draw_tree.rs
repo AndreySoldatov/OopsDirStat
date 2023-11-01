@@ -7,8 +7,8 @@ use macroquad::{
         screen_width, screen_height
     }, 
     color, 
-    prelude::{GRAY}, 
-    text::{draw_text, get_text_center}
+    prelude::GRAY, 
+    text::{draw_text_ex, get_text_center, Font, TextParams}
 };
 
 use rand::prelude::*;
@@ -16,11 +16,14 @@ use rand::prelude::*;
 use crate::{fs_tree, utils};
 
 impl fs_tree::FsTreeNode {
-    pub fn draw(&self, active_index: usize) {
+    pub fn draw(&self, active_index: usize, font: Option<&Font>, font_size: u16) {
         if let fs_tree::EntryType::Dir = self.get_type() {
             let mut x = 0.0;
 
             let mut rng = SmallRng::seed_from_u64(self.get_weight());
+
+            let mut outline_x: f32 = 0.0;
+            let mut outline_width: f32 = 0.0;
 
             for (i, entry) in self.get_children().iter().enumerate() {
                 let prop = (entry.get_weight() as f32) / (self.get_weight() as f32);
@@ -35,32 +38,36 @@ impl fs_tree::FsTreeNode {
                     color::hsl_to_rgb(col.0, col.1, col.2)
                 );
 
-                let mut y = 5.0;
+                let off = screen_height() * 0.005;
+                let mut y = off;
 
                 for sentry in entry.get_children().iter() {
                     let sprop = (sentry.get_weight() as f32) / (entry.get_weight() as f32);
                     draw_rectangle(
-                        x + 5.0, 
+                        x + off,
                         y, 
                         screen_width() * prop - 10.0, 
-                        (screen_height() - 37.0 - 5.0 * entry.get_children().len() as f32) * sprop,
+                        (screen_height() - 37.0 - off * entry.get_children().len() as f32) * sprop,
                         color::hsl_to_rgb(col.0, col.1, col.2 + 0.1)
                     );
-                    y += (screen_height() - 37.0 - 5.0 * entry.get_children().len() as f32) * sprop + 5.0;
+                    y += (screen_height() - 37.0 - off * entry.get_children().len() as f32) * sprop + off;
                 }
 
                 if i == active_index {
-                    draw_rectangle_lines(
-                        x, 
-                        0.0, 
-                        screen_width() * prop, 
-                        screen_height() - 32.0, 
-                        8.0,
-                        GRAY
-                    );  
+                    outline_x = x;
+                    outline_width = screen_width() * prop;
                 }
                 x += screen_width() * prop;
             }
+
+            draw_rectangle_lines(
+                outline_x, 
+                0.0, 
+                outline_width, 
+                screen_height() - 32.0, 
+                8.0,
+                GRAY
+            );
 
             let active_subdir_str = format!("{:?}:{}:{}",
                 self.get_children()[active_index].get_type(),
@@ -68,22 +75,30 @@ impl fs_tree::FsTreeNode {
                 utils::bytes_to_string(self.get_children()[active_index].get_weight())
             );
 
-            draw_text(
+            draw_text_ex(
                 &active_subdir_str, 
                 10.0,
                 screen_height() - 10.0, 
-                32.0, 
-                GRAY
+                TextParams { 
+                    font, 
+                    font_size, 
+                    color: GRAY,
+                    ..Default::default()
+                }
             );
         } else {
             let fstr = format!("File: {} | {}", self.get_name(), utils::bytes_to_string(self.get_weight()));
-            let tc = get_text_center(&fstr, None, 32, 1.0, 0.0);
-            draw_text(
+            let tc = get_text_center(&fstr, font, font_size, 1.0, 0.0);
+            draw_text_ex(
                 &fstr, 
                 screen_width() / 2.0 - tc.x, 
                 (screen_height() - 32.0) / 2.0 - tc.y, 
-                32.0, 
-                GRAY
+                TextParams { 
+                    font, 
+                    font_size, 
+                    color: GRAY,
+                    ..Default::default()
+                }
             );
         }
 
@@ -93,12 +108,16 @@ impl fs_tree::FsTreeNode {
             utils::bytes_to_string(self.get_weight())
         );
 
-        draw_text(
+        draw_text_ex(
             &active_dir_str, 
-            screen_width() - get_text_center(&active_dir_str, None, 32, 1.0, 0.0).x * 2.0 - 10.0,
+            screen_width() - get_text_center(&active_dir_str, font, font_size, 1.0, 0.0).x * 2.0 - 10.0,
             screen_height() - 10.0, 
-            32.0,
-            GRAY
+            TextParams { 
+                font, 
+                font_size, 
+                color: GRAY,
+                ..Default::default()
+            }
         );
     }
 }
