@@ -17,6 +17,7 @@ use crate::{fs_tree, utils};
 
 impl fs_tree::FsTreeNode {
     pub fn draw(&self, active_index: usize, font: Option<&Font>, font_size: u16) {
+        //TODO: This needs refactoring:
         if let fs_tree::EntryType::Dir = self.get_type() {
             if self.get_children().len() > 0 {
                 let mut x = 0.0;
@@ -39,19 +40,18 @@ impl fs_tree::FsTreeNode {
                         color::hsl_to_rgb(col.0, col.1, col.2)
                     );
 
-                    let off = screen_height() * 0.005;
-                    let mut y = off;
+                    let mut y = 0.0;
 
                     for sentry in entry.get_children().iter() {
                         let sprop = (sentry.get_weight() as f32) / (entry.get_weight() as f32);
                         draw_rectangle(
-                            x + off,
+                            x,
                             y, 
-                            screen_width() * prop - 10.0, 
-                            (screen_height() - 37.0 - off * entry.get_children().len() as f32) * sprop,
-                            color::hsl_to_rgb(col.0, col.1, col.2 + 0.1)
+                            screen_width() * prop, 
+                            (screen_height() - 32.0)  * sprop,
+                            color::hsl_to_rgb(col.0, col.1, col.2 + rng.gen_range(-0.1..0.1))
                         );
-                        y += (screen_height() - 37.0 - off * entry.get_children().len() as f32) * sprop + off;
+                        y += (screen_height() - 32.0) * sprop;
                     }
 
                     if i == active_index {
@@ -70,7 +70,7 @@ impl fs_tree::FsTreeNode {
                     GRAY
                 );
 
-                let active_subdir_str = format!("{:?}:{}:{}",
+                let active_subdir_str = format!("{:?} : {} : {}",
                     self.get_children()[active_index].get_type(),
                     self.get_children()[active_index].get_name(),
                     utils::bytes_to_string(self.get_children()[active_index].get_weight())
@@ -118,7 +118,7 @@ impl fs_tree::FsTreeNode {
             );
         }
 
-        let active_dir_str = format!("{:?}:{}:{}",
+        let active_dir_str = format!("{:?} : {} : {}",
             self.get_type(),
             self.get_name(),
             utils::bytes_to_string(self.get_weight())
