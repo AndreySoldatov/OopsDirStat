@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 mod fs_tree;
 mod fs_draw_tree;
 mod utils;

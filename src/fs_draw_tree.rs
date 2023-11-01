@@ -18,74 +18,90 @@ use crate::{fs_tree, utils};
 impl fs_tree::FsTreeNode {
     pub fn draw(&self, active_index: usize, font: Option<&Font>, font_size: u16) {
         if let fs_tree::EntryType::Dir = self.get_type() {
-            let mut x = 0.0;
+            if self.get_children().len() > 0 {
+                let mut x = 0.0;
 
-            let mut rng = SmallRng::seed_from_u64(self.get_weight());
+                let mut rng = SmallRng::seed_from_u64(self.get_weight());
 
-            let mut outline_x: f32 = 0.0;
-            let mut outline_width: f32 = 0.0;
+                let mut outline_x: f32 = 0.0;
+                let mut outline_width: f32 = 0.0;
 
-            for (i, entry) in self.get_children().iter().enumerate() {
-                let prop = (entry.get_weight() as f32) / (self.get_weight() as f32);
+                for (i, entry) in self.get_children().iter().enumerate() {
+                    let prop = (entry.get_weight() as f32) / (self.get_weight() as f32);
 
-                let col: (f32, f32, f32) = (rng.gen_range(0.0..1.0), 0.8, 0.7);
+                    let col: (f32, f32, f32) = (rng.gen_range(0.0..1.0), 0.8, 0.7);
 
-                draw_rectangle(
-                    x, 
+                    draw_rectangle(
+                        x, 
+                        0.0, 
+                        screen_width() * prop, 
+                        screen_height() - 32.0, 
+                        color::hsl_to_rgb(col.0, col.1, col.2)
+                    );
+
+                    let off = screen_height() * 0.005;
+                    let mut y = off;
+
+                    for sentry in entry.get_children().iter() {
+                        let sprop = (sentry.get_weight() as f32) / (entry.get_weight() as f32);
+                        draw_rectangle(
+                            x + off,
+                            y, 
+                            screen_width() * prop - 10.0, 
+                            (screen_height() - 37.0 - off * entry.get_children().len() as f32) * sprop,
+                            color::hsl_to_rgb(col.0, col.1, col.2 + 0.1)
+                        );
+                        y += (screen_height() - 37.0 - off * entry.get_children().len() as f32) * sprop + off;
+                    }
+
+                    if i == active_index {
+                        outline_x = x;
+                        outline_width = screen_width() * prop;
+                    }
+                    x += screen_width() * prop;
+                }
+
+                draw_rectangle_lines(
+                    outline_x, 
                     0.0, 
-                    screen_width() * prop, 
+                    outline_width, 
                     screen_height() - 32.0, 
-                    color::hsl_to_rgb(col.0, col.1, col.2)
+                    8.0,
+                    GRAY
                 );
 
-                let off = screen_height() * 0.005;
-                let mut y = off;
+                let active_subdir_str = format!("{:?}:{}:{}",
+                    self.get_children()[active_index].get_type(),
+                    self.get_children()[active_index].get_name(),
+                    utils::bytes_to_string(self.get_children()[active_index].get_weight())
+                );
 
-                for sentry in entry.get_children().iter() {
-                    let sprop = (sentry.get_weight() as f32) / (entry.get_weight() as f32);
-                    draw_rectangle(
-                        x + off,
-                        y, 
-                        screen_width() * prop - 10.0, 
-                        (screen_height() - 37.0 - off * entry.get_children().len() as f32) * sprop,
-                        color::hsl_to_rgb(col.0, col.1, col.2 + 0.1)
-                    );
-                    y += (screen_height() - 37.0 - off * entry.get_children().len() as f32) * sprop + off;
-                }
-
-                if i == active_index {
-                    outline_x = x;
-                    outline_width = screen_width() * prop;
-                }
-                x += screen_width() * prop;
+                draw_text_ex(
+                    &active_subdir_str, 
+                    10.0,
+                    screen_height() - 10.0, 
+                    TextParams { 
+                        font, 
+                        font_size, 
+                        color: GRAY,
+                        ..Default::default()
+                    }
+                );
+            } else {
+                let dstr = format!("Directory \"{}\" is empty", self.get_name());
+                let tc = get_text_center(&dstr, font, font_size, 1.0, 0.0);
+                draw_text_ex(
+                    &dstr, 
+                    screen_width() / 2.0 - tc.x, 
+                    (screen_height() - 32.0) / 2.0 - tc.y, 
+                    TextParams { 
+                        font, 
+                        font_size, 
+                        color: GRAY,
+                        ..Default::default()
+                    }
+                );
             }
-
-            draw_rectangle_lines(
-                outline_x, 
-                0.0, 
-                outline_width, 
-                screen_height() - 32.0, 
-                8.0,
-                GRAY
-            );
-
-            let active_subdir_str = format!("{:?}:{}:{}",
-                self.get_children()[active_index].get_type(),
-                self.get_children()[active_index].get_name(),
-                utils::bytes_to_string(self.get_children()[active_index].get_weight())
-            );
-
-            draw_text_ex(
-                &active_subdir_str, 
-                10.0,
-                screen_height() - 10.0, 
-                TextParams { 
-                    font, 
-                    font_size, 
-                    color: GRAY,
-                    ..Default::default()
-                }
-            );
         } else {
             let fstr = format!("File: {} | {}", self.get_name(), utils::bytes_to_string(self.get_weight()));
             let tc = get_text_center(&fstr, font, font_size, 1.0, 0.0);
