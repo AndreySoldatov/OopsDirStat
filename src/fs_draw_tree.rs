@@ -70,7 +70,7 @@ impl fs_tree::FsTreeNode {
                     GRAY
                 );
 
-                let active_subdir_str = format!("{:?} : {} : {}",
+                let active_subdir_str = format!("{:?} | {} | {}",
                     self.get_children()[active_index].get_type(),
                     self.get_children()[active_index].get_name(),
                     utils::bytes_to_string(self.get_children()[active_index].get_weight())
@@ -118,7 +118,7 @@ impl fs_tree::FsTreeNode {
             );
         }
 
-        let active_dir_str = format!("{:?} : {} : {}",
+        let active_dir_str = format!("{:?} | {} | {}",
             self.get_type(),
             self.get_name(),
             utils::bytes_to_string(self.get_weight())
